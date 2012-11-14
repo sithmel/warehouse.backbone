@@ -1,0 +1,1163 @@
+<!doctype html>
+<html manifest="cache.manifest" lang="it">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+	<title>Magazzino prodotti</title>
+	<meta name="description" content="Una semplice applicazione di gestione magazzino">
+	<meta name="author" content="Maurizio Lupo">
+
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+
+	<link rel="stylesheet" href="css/jquery-ui-1.8.16.custom.css">
+	<link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+
+<div id="container">
+	<header>
+
+	</header>
+
+	<div id="main" role="main">
+	    <nav>
+	        <ul>
+	            <li>
+	                <a href="#tab-1">Uscite</a>
+	            </li>
+	            <li>
+	                <a href="#tab-2">Entrate</a>
+	            </li>
+	            <li>
+	                <a href="#tab-3">Utenti</a>
+	            </li>
+	            <li>
+	                <a href="#tab-4">Prodotti</a>
+	            </li>
+	            <li>
+	                <a href="#tab-5">Report</a>
+	            </li>
+	        </ul>
+	    </nav>
+
+	    <div id="tab-1">
+	        <div id="outputs">
+	        </div>
+	    </div>
+	    <div id="tab-2">
+	        <div id="inputs">
+	        </div>
+	        <div class="advanced-label">Avanzate</div>
+	        <div class="advanced-content">
+                <input id="import-file-entries" type="file" value="Importa movimenti" />
+                <input id="reset-entries" type="button" value="Svuota movimenti" />
+                <input id="export-file-entries" type="button" value="Esporta movimenti" />
+                <textarea id="export-file-entries-area"></textarea>
+	        </div>
+	    </div>
+
+	    <div id="tab-3">
+	        <div id="users">
+	        </div>
+	        <div class="advanced-label">Avanzate</div>
+	        <div class="advanced-content">
+                <input id="import-file-users" type="file" value="Importa Utenti" />
+                <input id="reset-users" type="button" value="Svuota Utenti" />
+                <input id="export-file-users" type="button" value="Esporta utenti" />
+                <textarea id="export-file-users-area"></textarea>
+	        </div>
+	    </div>
+	    <div id="tab-4">
+	        <div id="products">
+	        </div>
+	        <div class="advanced-label">Avanzate</div>
+	        <div class="advanced-content">
+                <input id="import-file-products" type="file" value="Importa prodotti" />
+                <input id="reset-products" type="button" value="Svuota prodotti" />
+                <input id="export-file-products" type="button" value="Esporta prodotti" />
+                <textarea id="export-file-products-area"></textarea>
+            </div>
+	    </div>
+	    <div id="tab-5">
+	        <h2>Report distribuzione</h2>
+	        <label>Dal:&nbsp;<input id="from" /></label>&nbsp;&nbsp;
+	        <label>al:&nbsp;<input id="to" /></label>
+	        <label>chi:&nbsp;<input id="who" /></label>	        
+	        <input class="print" type="button" value="stampa" />
+	        <hr />
+	        <div id="report">
+	        </div>
+	    </div>
+	    
+
+	</div>
+	<footer>
+	<p>Copyright - Maurizio Lupo Torino 2012 - v. 1.0</p>
+    <input id="install-firefox" type="button" value="Installa su Firefox" />
+
+	</footer>
+</div> <!--! end of #container -->
+
+<script src="js/jquery-1.6.2.min.js"></script>
+<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="js/jquery.ui.datepicker-it.js"></script>
+<script src="js/underscore-1.3.3.min.js"></script>
+<script src="js/backbone-0.9.2.min.js"></script>
+<script src="js/backbone-indexeddb.js"></script>
+
+<script type="text/template" id="product_template">
+            <td>
+                <span class="viewOnly"><%= item.get('code') %></span>
+                <input class="editOnly code" value="<%= item.get('code') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('name') %></span>
+                <input class="editOnly name" value="<%= item.get('name') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('description') %></span>
+                <input class="editOnly desc" value="<%= item.get('description') %>"/>
+            </td>
+            <td>
+                <span class="quantity"></span>
+            </td>
+            <td>
+                <input class="save editOnly" type="button" value="Salva"/>
+                <input class="edit viewOnly" type="button" value="Modifica"/>
+                <input class="delete" type="button" value="Cancella"/>
+            </td>
+</script>
+<script type="text/template" id="product_list_template">
+<table>
+    <thead>
+        <tr>
+            <th>Codice</th><th>Nome Prodotto</th><th>Descrizione</th><th>Magazzino</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="new">
+            <td>
+                <input class="code" value=""/>
+            </td>
+            <td>
+                <input class="name" value=""/>
+            </td>
+            <td>
+                <input class="desc" value=""/>
+            </td>
+            <td>
+            </td>
+            <td>
+                <input class="add" type="button" value="Nuovo"/>
+            </td>
+
+        </tr>
+        <% items.each(function (){%> <tr></tr> <%});%>
+
+    </tbody>
+
+</table>
+</script>
+<script type="text/template" id="user_template">
+            <td>
+                <span class="viewOnly"><%= item.get('code') %></span>
+                <input class="editOnly code" value="<%= item.get('code') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('surname') %></span>
+                <input class="editOnly surname" value="<%= item.get('surname') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('name') %></span>
+                <input class="editOnly name" value="<%= item.get('name') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('address') %></span>
+                <input class="editOnly address" value="<%= item.get('address') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('phone') %></span>
+                <input class="editOnly phone" value="<%= item.get('phone') %>"/>
+            </td>
+            <td>
+                <input class="save editOnly" type="button" value="Salva"/>
+                <input class="edit viewOnly" type="button" value="Modifica"/>
+                <input class="delete" type="button" value="Cancella"/>
+            </td>
+</script>
+<script type="text/template" id="user_list_template">
+<table>
+    <thead>
+        <tr>
+            <th>Codice Fiscale</th><th>Cognome</th><th>Nome</th><th>Indirizzo</th><th>Telefono</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="new">
+            <td>
+                <input class="code" value=""/>
+            </td>
+            <td>
+                <input class="surname" value=""/>
+            </td>
+            <td>
+                <input class="name" value=""/>
+            </td>
+            <td>
+                <input class="address" value=""/>
+            </td>
+            <td>
+                <input class="phone" value=""/>
+            </td>
+            <td>
+                <input class="add" type="button" value="Nuovo"/>
+            </td>
+
+        </tr>
+        <% items.each(function (){%> <tr></tr> <%});%>
+
+    </tbody>
+
+</table>
+</script>
+<script type="text/template" id="output_template">
+            <td>
+                <span class="viewOnly userlabel"></span>
+                <input class="editOnly userid" value="<%= item.get('userid') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly productlabel"></span>
+                <input class="editOnly productid" value="<%= item.get('productid') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= -parseInt(item.get('quantity')) %></span>
+                <select class="quantity editOnly ">
+                    <% for(var i = 1; i < 101 ; i++){ %>
+                        <option value="<%= -i %>" <% if (-i === parseInt(item.get('quantity')) ) print('selected="selected"'); %>  ><%= i %> </option>
+                    <% } %>
+                </select>
+               <!-- <input type="number" class="editOnly quantity" value="<%= item.get('quantity') %>"/>-->
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('date') %></span>
+                <input class="editOnly date" value="<%= item.get('date') %>"/>
+            </td>
+            <td>
+                <input class="save editOnly" type="button" value="Salva"/>
+                <input class="edit viewOnly" type="button" value="Modifica"/>
+                <input class="delete" type="button" value="Cancella"/>
+            </td>
+</script>
+<script type="text/template" id="output_list_template">
+<table>
+    <thead>
+        <tr>
+            <th>Utente</th><th>Prodotto</th><th>Quantità</th><th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="new">
+            <td>
+                <input class="userid" value=""/>
+            </td>
+            <td>
+                <input class="productid" value=""/>
+            </td>
+            <td>
+                <select class="quantity">
+                    <% for(var i = 1; i < 101 ; i++){ %>
+                        <option value="<%= -i %>" <% if (-i === 1) print('selected="selected"'); %>  ><%= i %> </option>
+                    <% } %>
+                </select>
+<!--                <input type="number" class="quantity" value="1"/>-->
+            </td>
+            <td>
+<%
+var d = new Date();
+var datestr = $.datepicker.formatDate( "dd/mm/yy", d); 
+%>
+                <input class="date" value="<%= datestr %>"/>
+            </td>
+            <td>
+                <input class="add" type="button" value="Nuovo"/>
+            </td>
+
+        </tr>
+        <% items.each(function (){%> <tr></tr> <%});%>
+
+    </tbody>
+
+</table>
+</script>
+<script type="text/template" id="output_report_list_template">
+<table>
+    <thead>
+        <tr>
+            <th>Utente</th><th>Farmaco</th><th>Quantità</th><th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% items.each(function (obj){%>
+         <tr>
+             <td><%= obj.user %></td>
+             <td><%= obj.product %></td>
+             <td><%= obj.quantity %></td>
+             <td><%= obj.date %></td>
+         </tr> 
+        <%});%>
+
+    </tbody>
+
+</table>
+</script>
+
+
+<script type="text/template" id="input_template">
+            <td>
+                <span class="viewOnly productlabel"></span>
+                <input class="editOnly productid" value="<%= item.get('productid') %>"/>
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('quantity') %></span>
+                <select class="quantity editOnly ">
+                    <% for(var i = 1; i < 101 ; i++){ %>
+                        <option value="<%= i %>" <% if (i === parseInt(item.get('quantity')) ) print('selected="selected"'); %>  ><%= i %> </option>
+                    <% } %>
+                </select>
+               <!-- <input type="number" class="editOnly quantity" value="<%= item.get('quantity') %>"/>-->
+            </td>
+            <td>
+                <span class="viewOnly"><%= item.get('date') %></span>
+                <input class="editOnly date" value="<%= item.get('date') %>"/>
+            </td>
+            <td>
+                <input class="save editOnly" type="button" value="Salva"/>
+                <input class="edit viewOnly" type="button" value="Modifica"/>
+                <input class="delete" type="button" value="Cancella"/>
+            </td>
+</script>
+<script type="text/template" id="input_list_template">
+<table>
+    <thead>
+        <tr>
+            <th>Prodotto</th><th>Quantità</th><th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="new">
+            <td>
+                <input class="productid" value=""/>
+            </td>
+            <td>
+                <select class="quantity">
+                    <% for(var i = 1; i < 101 ; i++){ %>
+                        <option value="<%= i %>" <% if (i === 1) print('selected="selected"'); %>  ><%= i %> </option>
+                    <% } %>
+                </select>
+<!--                <input type="number" class="quantity" value="1"/>-->
+            </td>
+            <td>
+<%
+var d = new Date();
+var datestr = $.datepicker.formatDate( "dd/mm/yy", d); 
+%>
+                <input class="date" value="<%= datestr %>"/>
+            </td>
+            <td>
+                <input class="add" type="button" value="Nuovo"/>
+            </td>
+
+        </tr>
+        <% items.each(function (){%> <tr></tr> <%});%>
+
+    </tbody>
+
+</table>
+</script>
+    
+<script type="text/javascript">
+var UsersData = {
+  id: "users",
+  description: "Users data",
+  migrations: [
+    {
+      version: 2,
+      migrate: function(transaction, next) {
+        transaction.db.createObjectStore("users");
+        next();
+      }
+    }
+  ]
+};
+var ProductsData = {
+  id: "products",
+  description: "Products data",
+  migrations: [
+    {
+      version: 3,
+      migrate: function(transaction, next) {
+        transaction.db.createObjectStore("products");
+        next();
+      }
+    }
+  ]
+};
+var EntriesData = {
+  id: "entries",
+  description: "Entries data",
+  migrations: [
+    {
+      version: 3,
+      migrate: function(transaction, next) {
+        transaction.db.createObjectStore("entries");
+        next();
+      }
+    }
+  ]
+};
+
+var str2date = function (s){
+    return $.datepicker.parseDate('dd/mm/yy', s);
+};
+
+/*
+    Models
+*/
+
+var Product = Backbone.Model.extend({
+    database: ProductsData,
+    storeName: ProductsData.id,
+    defaults: {code:'',
+               name:'',
+               description:'' 
+    },
+    validate: function (attributes){
+        if(! attributes.code || ! attributes.code.length){
+            return "Il codice è obbligatorio !!!";
+        }
+        if(! attributes.name || ! attributes.name.length){
+            return "Il nome del medicinale è obbligatorio !!!";
+        }
+    }
+});
+
+var User = Backbone.Model.extend({
+    database: UsersData,
+    storeName: UsersData.id,
+    defaults: {code:'',
+               surname:'',
+               name:'',
+               address:'',
+               phone:''
+    }
+});
+
+var Entry = Backbone.Model.extend({
+    database: EntriesData,
+    storeName: EntriesData.id,
+    defaults: {userid:'',
+               productid:'',
+               quantity:0,
+               date:''
+    }
+});
+
+/*
+    Collections
+*/
+
+var BasicList =  Backbone.Collection.extend({
+    initialize: function(){
+        this.bind('destroy', this.delete_from_collection, this);
+    },
+    delete_from_collection : function (obj){
+        this.remove(obj);
+    }
+});
+
+var ProductsList = BasicList.extend({
+    model:Product,
+    database: ProductsData,
+    storeName: ProductsData.id
+});
+
+var UsersList = BasicList.extend({
+    model:User,
+    database: UsersData,
+    storeName: UsersData.id
+});
+
+var EntriesList = BasicList.extend({
+    model:Entry,
+    database: EntriesData,
+    storeName: EntriesData.id
+});
+
+
+/*
+  Models  Views
+*/
+
+var GenericTabularModelView = Backbone.View.extend({
+    events: {
+        "click .edit":   "openEdit",
+        "click .delete": "destroy",
+        "click .save":   "save",
+    },
+    openEdit:function (evt){
+        this.$el.addClass('editing');
+    },
+    destroy:function (evt){
+        if(confirm('Sicuro di voler cancellare ?')){
+            this.model.destroy();
+        }
+    },
+    save:function (evt){
+        var operation = this.model.set(this.getObject());
+        var node = this.$el;
+        if (operation){
+            this.model.save(null, {
+                success: function (){
+                    node.removeClass('editing');
+                }
+            });
+        }
+
+    },
+    render: function(){
+        
+        // return the template using underscore
+        var out = this.template({item: this.model});
+        // Load the compiled HTML into the Backbone "el"
+        this.$el.html(out);
+        return this;
+    }
+    
+});
+
+
+var ProductView = GenericTabularModelView.extend({
+    template : _.template($("#product_template").html()),
+    getObject : function (){
+        return {
+            code:this.$('.code').val(),
+            name:this.$('.name').val(),
+            description:this.$('.desc').val()
+        };
+    }
+
+});
+
+var UserView = GenericTabularModelView.extend({
+    template : _.template($("#user_template").html()),
+    getObject : function (){
+        return {
+            code:this.$('.code').val(),
+            surname:this.$('.surname').val(),
+            name:this.$('.name').val(),
+            address:this.$('.address').val(),
+            phone:this.$('.phone').val(),
+        };
+    }
+    
+});
+
+var OutputView = GenericTabularModelView.extend({
+    template : _.template($("#output_template").html()),
+    getObject : function (){
+        return {
+            userid:this.$('.userid').val(),
+            productid:this.$('.productid').val(),
+            quantity:this.$('.quantity').val(),
+            date:this.$('.date').val(),
+        };
+    }
+    
+});
+
+var InputView = GenericTabularModelView.extend({
+    template : _.template($("#input_template").html()),
+    getObject : function (){
+        return {
+            userid:this.$('.userid').val(),
+            productid:this.$('.productid').val(),
+            quantity:this.$('.quantity').val(),
+            date:this.$('.date').val(),
+        };
+    }
+    
+});
+
+
+/*
+  Vocabs
+*/
+var uservocab, productvocab;
+var getUser = function (v){
+    var found = _(uservocab).find(function (obj){
+        return obj.value === v;
+    });
+    if (found){
+        return found.label;
+    }
+    return '';
+};
+
+var getProduct = function (v){
+    var found = _(productvocab).find(function (obj){
+        return obj.value === v;
+    });
+    if (found){
+        return found.label;
+    }
+    return '';
+};
+
+/*
+  Collections Views
+*/
+
+var ProductsListView = Backbone.View.extend({
+    template : _.template($("#product_list_template").html()),
+    initialize: function(){
+        this.collection.bind('add', this.render, this);
+        this.collection.bind('reset', this.render, this);
+        this.collection.bind('remove', this.render, this);
+        this.collection.bind('change', this.render, this);
+    },
+    events: {
+        "click .add":    "add"
+    },
+    add:function (){
+        var med = new Product();
+        var $newrecord = this.$('.new');
+        var operation = med.set({
+            code: $newrecord.find('.code').val(),
+            name: $newrecord.find('.name').val(),
+            description: $newrecord.find('.desc').val()
+        });
+        if (operation){
+            this.collection.add(med);
+            med.save();
+        }
+    },
+    render: function(){
+        // return the template using underscore
+        var out = this.template({items: this.collection});
+        // Load the compiled HTML into the Backbone "el"
+        this.$el.html(out);
+        
+        var medView;
+        var $tbody = this.$el.find('tbody');
+        var sortedcollection = this.collection
+            .sortBy(function (element){
+                return element.get('name').toLowerCase();
+            });
+
+        _(sortedcollection).each(function (element, index){
+            medView = new ProductView({el:$tbody.children(':not(.new)').eq(index),model:element });
+            medView.render();
+        });
+
+        productvocab = _(sortedcollection).map(function(obj){ return {label:obj.get('name'), value:obj.get('code')}; });
+
+        $('.productid').autocomplete( "option", "source", productvocab);
+
+        $('.productid').each(function (){
+            var v = $(this).val();
+            if(!v){
+                return;
+            }
+            var label = _(productvocab).find(function (obj){
+                return obj.value === v;
+           
+            }).label;
+            $(this).siblings('.productlabel').text(label);
+        }); 
+
+        return this;
+    }
+});
+
+var UsersListView = Backbone.View.extend({
+    template : _.template($("#user_list_template").html()),
+    initialize: function(){
+        this.collection.bind('add', this.render, this);
+        this.collection.bind('reset', this.render, this);
+        this.collection.bind('remove', this.render, this);
+        this.collection.bind('change', this.render, this);
+    },
+    events: {
+        "click .add":    "add"
+    },
+    add:function (){
+        var user = new User();
+        var $newrecord = this.$('.new');
+        var operation = user.set({
+            code: $newrecord.find('.code').val(),
+            surname: $newrecord.find('.surname').val(),
+            name: $newrecord.find('.name').val(),
+            address: $newrecord.find('.address').val(),
+            phone: $newrecord.find('.phone').val()
+        });
+        if (operation){
+            this.collection.add(user);
+            user.save();
+        }
+        
+    },
+    render: function(){
+        // return the template using underscore
+        var out = this.template({items: this.collection});
+        // Load the compiled HTML into the Backbone "el"
+        this.$el.html(out);
+        
+        var userView;
+        var $tbody = this.$el.find('tbody');
+        var sortedcollection = this.collection
+            .sortBy(function (element){
+                return element.get('surname').toLowerCase();
+            });
+        _(sortedcollection).each(function (element, index){
+            userView = new UserView({el:$tbody.children(':not(.new)').eq(index),model:element });
+            userView.render();
+        });
+        uservocab = _(sortedcollection).map(function(obj){ return {label:obj.get('surname') + ' ' + obj.get('name'), value:obj.get('code')}; });
+
+        $('.userid').autocomplete( "option", "source", uservocab);
+        $('#who').autocomplete( "option", "source", uservocab);
+        
+        $('.userid').each(function (){
+            var v = $(this).val();
+            if(!v){
+                return;
+            }
+            var label = _(uservocab).find(function (obj){
+                return obj.value === v;
+           
+            }).label;
+            $(this).siblings('.userlabel').text(label);
+        });
+
+
+
+        return this;
+    }
+});
+
+var OutputsListView = Backbone.View.extend({
+    template : _.template($("#output_list_template").html()),
+    initialize: function(){
+        this.collection.bind('add', this.render, this);
+        this.collection.bind('reset', this.render, this);
+        this.collection.bind('remove', this.render, this);
+        this.collection.bind('change', this.render, this);
+    },
+    events: {
+        "click .add":    "add"
+    },
+    add:function (){
+        var entry = new Entry();
+        var $newrecord = this.$('.new');
+        var operation = entry.set({
+            userid: $newrecord.find('.userid').val(),
+            productid: $newrecord.find('.productid').val(),
+            quantity: $newrecord.find('.quantity').val(),
+            date: $newrecord.find('.date').val()
+        });
+
+        if (operation){
+            this.collection.add(entry);
+            entry.save();
+        }
+        
+    },
+    render: function(){
+        var entriescollection = this.collection;
+        var collection = this.collection
+            .filter(function (obj){
+                return parseInt(obj.get('quantity')) < 0;
+            });
+        collection = _(collection)
+            .sortBy(function (element){
+                return str2date(element.get('date'));
+            }).reverse();
+        collection = _(collection);
+
+        // return the template using underscore
+        var out = this.template({items: collection});
+
+        // Load the compiled HTML into the Backbone "el"
+        this.$el.html(out);
+        
+        var $tbody = this.$el.find('tbody');
+        collection.each(function (element, index){
+            var outputView = new OutputView({el:$tbody.children(':not(.new)').eq(index), model:element });
+            outputView.render();
+        });
+        this.$el.find('.date').datepicker($.datepicker.regional[ "it" ]);
+
+        this.$el.find('.userid').autocomplete({
+            source: uservocab,
+            minLength: 0
+        });
+
+        this.$el.find('.userid').each(function (){
+            var v = $(this).val();
+            if(!v){
+                return;
+            }
+            var label = getUser(v);
+            $(this).siblings('.userlabel').text(label);
+        });
+
+        this.$el.find('.productid').autocomplete({
+            source: productvocab,
+            minLength: 0
+        });
+        
+        this.$el.find('.productid').each(function (){
+            var v = $(this).val();
+            if(!v){
+                return;
+            }
+            var label = getProduct(v);
+            $(this).siblings('.productlabel').text(label);
+        });        
+        
+        // set how many products
+        $('#products tbody tr:not(.new)').each(function (){
+            var $this = $(this);
+            
+            var code = $this.find('.code').val();
+            var s = entriescollection.filter(function(obj){
+                return obj.get('productid') === code;
+            })
+            .map(function (obj){
+               return parseInt(obj.get('quantity'));
+            })
+            .reduce(function(memo, num){
+            return memo + num;
+            }, 0);
+            $this.find('.quantity').text(s.toString());
+        });
+        //set the last userid
+        var lastval = this.$('.editOnly.userid:last').val() || '';
+        this.$('.new .userid').val(lastval);
+        this.$('.new .productid').focus();
+        return this;
+    }
+});
+
+var OutputsReportListView = Backbone.View.extend({
+    template : _.template($("#output_report_list_template").html()),
+    initialize: function(){
+        this.collection.bind('reset', this.render, this);
+        this.collection.bind('remove', this.render, this);
+        this.collection.bind('change', this.render, this);
+        var that = this;
+        $('#from, #to, #who').change(function (){
+            that.render();
+        });
+        $( "#who" ).bind("autocompleteselect",function (){
+            setTimeout(function (){that.render();}, 200);
+        });
+        $( "#who" ).keyup(function (){
+            that.render();
+        });
+    },
+
+    render: function(){
+        var collection = this.collection
+            .filter(function (obj){
+                var from = str2date($('#from').val());
+                var to = str2date($('#to').val());
+                var date = str2date(obj.get('date'));
+                var who = $('#who').val();
+                if (parseInt(obj.get('quantity')) > 0){
+                    return false;
+                }
+                if (date < from){
+                    return false;
+                }
+                if (date > to){
+                    return false;
+                }
+                if (who.length && who !== obj.get('userid')){
+                    return false;
+                }
+                return true;
+            
+            });
+
+        collection = _(collection)
+            .sortBy(function (element){
+                return str2date(element.get('date'));
+            });
+
+        collection = _(collection).map(function (obj){
+            var user = getUser(obj.get('userid'));
+            var product = getProduct(obj.get('productid'));
+            var quantity = Math.abs(parseInt(obj.get('quantity'), 10)).toString();
+            return {
+                user: user,
+                product: product,
+                quantity: quantity,
+                date: obj.get('date')
+            };
+        });
+        
+        if (collection.length){
+            // return the template using underscore
+            var out = this.template({items: _(collection)});
+            // Load the compiled HTML into the Backbone "el"
+            this.$el.html(out);
+        }
+        else {
+            this.$el.html('<h2>Nessun risultato !!!</h2>');
+        }
+
+        return this;
+    }
+});
+
+
+var InputsListView = Backbone.View.extend({
+    template : _.template($("#input_list_template").html()),
+    initialize: function(){
+        this.collection.bind('add', this.render, this);
+        this.collection.bind('reset', this.render, this);
+        this.collection.bind('remove', this.render, this);
+        this.collection.bind('change', this.render, this);
+    },
+    events: {
+        "click .add":    "add"
+    },
+    add:function (){
+        var entry = new Entry();
+        var $newrecord = this.$('.new');
+        var operation = entry.set({
+            userid: $newrecord.find('.userid').val(),
+            productid: $newrecord.find('.productid').val(),
+            quantity: $newrecord.find('.quantity').val(),
+            date: $newrecord.find('.date').val()
+        });
+
+        if (operation){
+            this.collection.add(entry);
+            entry.save();
+        }
+        
+    },
+    render: function(){
+        var collection = this.collection
+            .filter(function (obj){
+                return parseInt(obj.get('quantity')) > 0;
+            });
+        collection = _(collection)
+            .sortBy(function (element){
+                return str2date(element.get('date'));
+            }).reverse();
+        collection = _(collection);
+
+        // return the template using underscore
+        var out = this.template({items: collection});
+        // Load the compiled HTML into the Backbone "el"
+        this.$el.html(out);
+        
+        var $tbody = this.$el.find('tbody');
+
+        collection.each(function (element, index){
+            var inputView;
+            inputView = new InputView({el:$tbody.children(':not(.new)').eq(index), model:element });
+            inputView.render();
+        });
+        this.$el.find('.date').datepicker($.datepicker.regional[ "it" ]);
+
+        this.$el.find('.userid').each(function (){
+            var v = $(this).val();
+            if(!v){
+                return;
+            }
+            var label = getUser(v);
+            $(this).siblings('.userlabel').text(label);
+        });
+
+        this.$el.find('.productid').autocomplete({
+            source: productvocab,
+            minLength: 0
+        });
+        
+        this.$el.find('.productid').each(function (){
+            var v = $(this).val();
+            if(!v){
+                return;
+            }
+            var label = getProduct(v);
+
+            $(this).siblings('.productlabel').text(label);
+        });        
+
+        return this;
+    }
+});
+
+/*
+    Initialization
+*/
+
+    var now = new Date();
+    var lastmonth = new Date();
+    lastmonth.setDate(lastmonth.getDate()-30);
+
+    $('#from')
+        .datepicker($.datepicker.regional[ "it" ])
+        .val($.datepicker.formatDate( "dd/mm/yy",lastmonth));
+    $('#to')
+        .datepicker($.datepicker.regional[ "it" ])
+        .val($.datepicker.formatDate( "dd/mm/yy",now));
+
+    $('#who').autocomplete({
+        source: uservocab,
+        minLength: 0
+    });
+
+    var products = new ProductsList();
+    var users = new UsersList();
+    var entries = new EntriesList();
+
+
+    
+    var products_list_view = new ProductsListView({ el: $("#products"), collection:products });    
+
+    var users_list_view = new UsersListView({ el: $("#users"), collection:users });    
+
+    var outputs_list_view = new OutputsListView({ el: $("#outputs"), collection:entries });    
+
+    var inputs_list_view = new InputsListView({ el: $("#inputs"), collection:entries });    
+
+    var outputs_report_list_view = new OutputsReportListView({ el: $("#report"), collection:entries });    
+
+    users.fetch({
+        success : function (){
+            products.fetch({
+                success : function (){
+                    entries.fetch({
+                        success : function (){
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+//$(document).ready(function (){
+//
+// tabs
+//
+    $( "#main" ).tabs();
+//
+// print button
+//
+    $('.print').click(function (){
+        window.print();
+    });
+
+//
+// Firefox installation
+//
+    $("#install-firefox").hide();
+
+    if (navigator.mozApps){
+        var request = navigator.mozApps.getSelf();
+        request.onsuccess = function() {
+          if (request.result) {
+            // we're installed
+          } else {
+            $("#install-firefox").show();
+            // not installed
+          }
+        };
+        request.onerror = function() {
+          alert('Error checking installation status: ' + this.error.message);
+        };
+        
+    }
+
+    $("#install-firefox").click(function (){
+        var request = navigator.mozApps.install(window.location + "manifest.webapp");
+        request.onsuccess = function() {
+          alert('Installata !');
+          // great - display a message, or redirect to a launch page
+        };
+        request.onerror = function() {
+          alert('Errore: ' + this.error.name);
+          // whoops - this.error.name has details
+        };
+    });
+
+    //
+    //advanced settings
+    //
+
+    $('.advanced-label').click(function (){
+        $(this).next().toggle('fast');
+    });
+
+    $.each({entries: entries, products: products, users: users}, function(key, value){
+        $('#reset-' + key).click(function (){
+            var i, l;
+            if (confirm('Sei sicuro ?')){
+                for(l = value.models.length ; l>0 ; l--){
+                    console.log(value.storeName);
+                    value.models[l-1].destroy({silent: true});
+                }
+                value.reset();
+            }
+        });
+
+        $("#import-file-" + key).change(function (){
+            var f = this.files[0],
+                oFReader = new FileReader();
+                oFReader.onload = function (){
+                
+                    var obj, data = JSON.parse(this.result);
+                    if ($.isArray(data)){
+                        $.each(data, function (item){
+                            var obj;
+                            obj = new value.model(this)
+                            value.add(obj,  {silent: true});
+                            obj.save();
+                        });
+                        value.trigger('add');
+                    }
+                    else {
+                        obj = new value.model(data)
+                        value.add(obj);
+                        obj.save();
+                    }
+                };
+            oFReader.readAsText(f);
+        });
+
+        $('#export-file-' + key).click(function (){
+            $(this).next('textarea').val(JSON.stringify(value.toJSON()));
+        });
+
+        $('#export-file-' + key + '-area').focus(function (){
+            var l = $(this).val().length;
+            this.setSelectionRange(0, l);
+        });
+    });
+
+
+
+
+//});
+
+</script>
+
+</body>
+</html>

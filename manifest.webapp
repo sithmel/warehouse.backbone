@@ -1,0 +1,14 @@
+{
+  "name": "Magazzino Prodotti",
+  "description": "Una piccola applicazione di gestione magazzino",
+  "launch_path": "/",
+  "icons": {
+    "128": "/med128.png",
+    "64": "/med.png"
+  },
+  "developer": {
+    "name": "Maurizio Lupo",
+    "url": "https://github.com/sithmel/warehouse.backbone"
+  },
+  "default_locale": "it"
+}
