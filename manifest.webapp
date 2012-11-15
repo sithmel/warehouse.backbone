@@ -3,8 +3,8 @@
   "description": "Una piccola applicazione di gestione magazzino",
   "launch_path": "/",
   "icons": {
-    "128": "/med128.png",
-    "64": "/med.png"
+    "128": "/archive-icon-128.png",
+    "64": "/archive-icon-64.png"
   },
   "developer": {
     "name": "Maurizio Lupo",
