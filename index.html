@@ -1070,21 +1070,21 @@ var InputsListView = Backbone.View.extend({
 //
     $("#install-firefox").hide();
 
-    if (navigator.mozApps){
-        var request = navigator.mozApps.getSelf();
-        request.onsuccess = function() {
-          if (request.result) {
-            // we're installed
-          } else {
-            $("#install-firefox").show();
-            // not installed
-          }
-        };
-        request.onerror = function() {
-          alert('Error checking installation status: ' + this.error.message);
-        };
-        
-    }
+//    if (navigator.mozApps){
+//        var request = navigator.mozApps.getSelf();
+//        request.onsuccess = function() {
+//          if (request.result) {
+//            // we're installed
+//          } else {
+//            $("#install-firefox").show();
+//            // not installed
+//          }
+//        };
+//        request.onerror = function() {
+//          alert('Error checking installation status: ' + this.error.message);
+//        };
+//        
+//    }
 
     $("#install-firefox").click(function (){
         var request = navigator.mozApps.install(window.location + "manifest.webapp");
