@@ -94,10 +94,19 @@
 
 	</div>
 	<footer>
-	<p>Copyright - Maurizio Lupo Torino 2012 - v. 1.0.1</p>
+	<p>Copyright Maurizio Lupo - v. 1.0.2</p>
     <input id="install-firefox" type="button" value="Installa su Firefox" />
 
 	</footer>
+    <div class="splash">
+        <div class="splashinner">
+	        <h2>Magazzino prodotti</h2>
+            <img src="archive-icon-128.png" />
+	        <h3>Una semplice applicazione di gestione magazzino</h3>
+            <div class="visualClear"></div>
+        	<p>Copyright Maurizio Lupo - v. 1.0.2</p>
+        </div>
+    </div>
 </div> <!--! end of #container -->
 
 <script src="js/jquery-1.6.2.min.js"></script>
@@ -121,7 +130,7 @@
                 <input class="editOnly desc" value="<%= item.get('description') %>"/>
             </td>
             <td>
-                <span class="quantity"></span>
+                <span class="quantity"><%= item.getTotal() %></span>
             </td>
             <td>
                 <input class="save editOnly" type="button" value="Salva"/>
@@ -224,11 +233,11 @@
 </script>
 <script type="text/template" id="output_template">
             <td>
-                <span class="viewOnly userlabel"></span>
+                <span class="viewOnly userlabel"><%= item.getUserName() %></span>
                 <input class="editOnly userid" value="<%= item.get('userid') %>"/>
             </td>
             <td>
-                <span class="viewOnly productlabel"></span>
+                <span class="viewOnly productlabel"><%= item.getProductName() %></span>
                 <input class="editOnly productid" value="<%= item.get('productid') %>"/>
             </td>
             <td>
@@ -316,7 +325,7 @@ var datestr = $.datepicker.formatDate( "dd/mm/yy", d);
 
 <script type="text/template" id="input_template">
             <td>
-                <span class="viewOnly productlabel"></span>
+                <span class="viewOnly productlabel"><%= item.getProductName() %></span>
                 <input class="editOnly productid" value="<%= item.get('productid') %>"/>
             </td>
             <td>
@@ -378,6 +387,9 @@ var datestr = $.datepicker.formatDate( "dd/mm/yy", d);
 </script>
     
 <script type="text/javascript">
+(function (){
+// variables
+
 var UsersData = {
   id: "users",
   description: "Users data",
@@ -421,6 +433,31 @@ var EntriesData = {
 var str2date = function (s){
     return $.datepicker.parseDate('dd/mm/yy', s);
 };
+/*
+  Vocabs
+*/
+
+var uservocab = [],
+    productvocab = [];
+
+var getProduct = function(v){
+    var found = _(productvocab).find(function (obj){
+        return obj.value === v;
+    });
+    if (found){
+        return found.label;
+    }
+    return '';
+};
+var getUser = function(v){
+    var found = _(uservocab).find(function (obj){
+        return obj.value === v;
+    });
+    if (found){
+        return found.label;
+    }
+    return '';
+};
 
 /*
     Models
@@ -440,6 +477,18 @@ var Product = Backbone.Model.extend({
         if(! attributes.name || ! attributes.name.length){
             return "Il nome del medicinale è obbligatorio !!!";
         }
+    },
+    getTotal: function (){
+        var code = this.get('code');
+        return entries.filter(function(obj){
+            return obj.get('productid') === code;
+        })
+        .map(function (obj){
+           return parseInt(obj.get('quantity'));
+        })
+        .reduce(function(memo, num){
+        return memo + num;
+        }, 0);
     }
 });
 
@@ -461,6 +510,12 @@ var Entry = Backbone.Model.extend({
                productid:'',
                quantity:0,
                date:''
+    },
+    getProductName: function (){
+        return getProduct(this.get('productid'));
+    },
+    getUserName: function (){
+        return getUser(this.get('userid'));
     }
 });
 
@@ -469,32 +524,64 @@ var Entry = Backbone.Model.extend({
 */
 
 var BasicList =  Backbone.Collection.extend({
-    initialize: function(){
-        this.bind('destroy', this.delete_from_collection, this);
-    },
     delete_from_collection : function (obj){
         this.remove(obj);
     }
 });
 
+
 var ProductsList = BasicList.extend({
     model:Product,
     database: ProductsData,
-    storeName: ProductsData.id
+    storeName: ProductsData.id,
+    initialize: function(){
+        this.bind('destroy', this.delete_from_collection, this);
+        this.bind('remove add change reset', function (collection){
+            this.updatevocab();
+            entries.trigger('change');
+        },  this);
+
+    },
+    updatevocab: function (){
+       productvocab = this.map(function(obj){
+           return {label:obj.get('name'), value:obj.get('code')};
+       });
+    }
 });
 
 var UsersList = BasicList.extend({
     model:User,
     database: UsersData,
-    storeName: UsersData.id
+    storeName: UsersData.id,
+    initialize: function(){
+        this.bind('destroy', this.delete_from_collection, this);
+        this.bind('remove add change reset', function (collection){
+            this.updatevocab();
+            entries.trigger('change');
+        }, this);
+    },
+    updatevocab: function (){
+       uservocab = this.map(function(obj){ return {label:obj.get('surname') + ' ' + obj.get('name'), value:obj.get('code')}; });
+    }
 });
 
 var EntriesList = BasicList.extend({
     model:Entry,
     database: EntriesData,
-    storeName: EntriesData.id
+    storeName: EntriesData.id,
+    initialize: function(){
+        this.bind('destroy', this.delete_from_collection, this);
+
+        this.bind('remove add change reset', function (obj){
+           products.trigger('updatequantity');
+        }, this);
+
+    }
 });
 
+var products = new ProductsList();
+var users = new UsersList();
+var entries = new EntriesList();
 
 /*
   Models  Views
@@ -590,31 +677,6 @@ var InputView = GenericTabularModelView.extend({
     
 });
 
-
-/*
-  Vocabs
-*/
-var uservocab, productvocab;
-var getUser = function (v){
-    var found = _(uservocab).find(function (obj){
-        return obj.value === v;
-    });
-    if (found){
-        return found.label;
-    }
-    return '';
-};
-
-var getProduct = function (v){
-    var found = _(productvocab).find(function (obj){
-        return obj.value === v;
-    });
-    if (found){
-        return found.label;
-    }
-    return '';
-};
-
 /*
   Collections Views
 */
@@ -626,6 +688,7 @@ var ProductsListView = Backbone.View.extend({
         this.collection.bind('reset', this.render, this);
         this.collection.bind('remove', this.render, this);
         this.collection.bind('change', this.render, this);
+        this.collection.bind('updatequantity', this.render, this);
     },
     events: {
         "click .add":    "add"
@@ -651,6 +714,7 @@ var ProductsListView = Backbone.View.extend({
         
         var medView;
         var $tbody = this.$el.find('tbody');
+
         var sortedcollection = this.collection
             .sortBy(function (element){
                 return element.get('name').toLowerCase();
@@ -660,22 +724,6 @@ var ProductsListView = Backbone.View.extend({
             medView = new ProductView({el:$tbody.children(':not(.new)').eq(index),model:element });
             medView.render();
         });
-
-        productvocab = _(sortedcollection).map(function(obj){ return {label:obj.get('name'), value:obj.get('code')}; });
-
-        $('.productid').autocomplete( "option", "source", productvocab);
-
-        $('.productid').each(function (){
-            var v = $(this).val();
-            if(!v){
-                return;
-            }
-            var label = _(productvocab).find(function (obj){
-                return obj.value === v;
-           
-            }).label;
-            $(this).siblings('.productlabel').text(label);
-        }); 
 
         return this;
     }
@@ -724,23 +772,6 @@ var UsersListView = Backbone.View.extend({
             userView = new UserView({el:$tbody.children(':not(.new)').eq(index),model:element });
             userView.render();
         });
-        uservocab = _(sortedcollection).map(function(obj){ return {label:obj.get('surname') + ' ' + obj.get('name'), value:obj.get('code')}; });
-
-        $('.userid').autocomplete( "option", "source", uservocab);
-        $('#who').autocomplete( "option", "source", uservocab);
-        
-        $('.userid').each(function (){
-            var v = $(this).val();
-            if(!v){
-                return;
-            }
-            var label = _(uservocab).find(function (obj){
-                return obj.value === v;
-           
-            }).label;
-            $(this).siblings('.userlabel').text(label);
-        });
-
 
 
         return this;
@@ -804,45 +835,12 @@ var OutputsListView = Backbone.View.extend({
             minLength: 0
         });
 
-        this.$el.find('.userid').each(function (){
-            var v = $(this).val();
-            if(!v){
-                return;
-            }
-            var label = getUser(v);
-            $(this).siblings('.userlabel').text(label);
-        });
-
         this.$el.find('.productid').autocomplete({
             source: productvocab,
             minLength: 0
         });
         
-        this.$el.find('.productid').each(function (){
-            var v = $(this).val();
-            if(!v){
-                return;
-            }
-            var label = getProduct(v);
-            $(this).siblings('.productlabel').text(label);
-        });        
-        
-        // set how many products
-        $('#products tbody tr:not(.new)').each(function (){
-            var $this = $(this);
-            
-            var code = $this.find('.code').val();
-            var s = entriescollection.filter(function(obj){
-                return obj.get('productid') === code;
-            })
-            .map(function (obj){
-               return parseInt(obj.get('quantity'));
-            })
-            .reduce(function(memo, num){
-            return memo + num;
-            }, 0);
-            $this.find('.quantity').text(s.toString());
-        });
+
         //set the last userid
         var lastval = this.$('.editOnly.userid:last').val() || '';
         this.$('.new .userid').val(lastval);
@@ -854,6 +852,7 @@ var OutputsListView = Backbone.View.extend({
 var OutputsReportListView = Backbone.View.extend({
     template : _.template($("#output_report_list_template").html()),
     initialize: function(){
+        this.collection.bind('add', this.render, this);
         this.collection.bind('reset', this.render, this);
         this.collection.bind('remove', this.render, this);
         this.collection.bind('change', this.render, this);
@@ -918,7 +917,12 @@ var OutputsReportListView = Backbone.View.extend({
         else {
             this.$el.html('<h2>Nessun risultato !!!</h2>');
         }
+        // update automplete
 
+        $('#who').autocomplete({
+            source: uservocab,
+            minLength: 0
+        });
         return this;
     }
 });
@@ -976,29 +980,10 @@ var InputsListView = Backbone.View.extend({
         });
         this.$el.find('.date').datepicker($.datepicker.regional[ "it" ]);
 
-        this.$el.find('.userid').each(function (){
-            var v = $(this).val();
-            if(!v){
-                return;
-            }
-            var label = getUser(v);
-            $(this).siblings('.userlabel').text(label);
-        });
-
         this.$el.find('.productid').autocomplete({
             source: productvocab,
             minLength: 0
         });
-        
-        this.$el.find('.productid').each(function (){
-            var v = $(this).val();
-            if(!v){
-                return;
-            }
-            var label = getProduct(v);
-
-            $(this).siblings('.productlabel').text(label);
-        });        
 
         return this;
     }
@@ -1019,14 +1004,6 @@ var InputsListView = Backbone.View.extend({
         .datepicker($.datepicker.regional[ "it" ])
         .val($.datepicker.formatDate( "dd/mm/yy",now));
 
-    $('#who').autocomplete({
-        source: uservocab,
-        minLength: 0
-    });
-
-    var products = new ProductsList();
-    var users = new UsersList();
-    var entries = new EntriesList();
 
 
     
@@ -1040,7 +1017,11 @@ var InputsListView = Backbone.View.extend({
 
     var outputs_report_list_view = new OutputsReportListView({ el: $("#report"), collection:entries });    
 
-    users.fetch({
+    users.fetch();
+    products.fetch();
+    entries.fetch();
+
+/*    users.fetch({
         success : function (){
             products.fetch({
                 success : function (){
@@ -1052,8 +1033,7 @@ var InputsListView = Backbone.View.extend({
             });
         }
     });
-
-//$(document).ready(function (){
+*/
 //
 // tabs
 //
@@ -1153,9 +1133,13 @@ var InputsListView = Backbone.View.extend({
     });
 
 
+    $(document).ready(function (){
+        setTimeout(function (){
+            $('.splash').fadeOut(1000);
+        },1000)
+    });
+}());
 
-
-//});
 
 </script>
 

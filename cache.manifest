@@ -23,4 +23,5 @@ CACHE MANIFEST
 /js/backbone-0.9.2.min.js
 /js/backbone-indexeddb.js
 /favicon.ico
-
+/archive-icon-128.png
+/archive-icon-64.png

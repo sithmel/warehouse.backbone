@@ -255,8 +255,32 @@ table { border-collapse: collapse; border-spacing: 0; }
 
 }
 
+.splash{
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: rgba(200, 200, 200, 0.4);
+}
 
-
+.splashinner{
+    text-align: center;
+    width:300px;
+    height:225px;
+    margin: 15% auto auto;
+    background-color: #AFED81;
+    border: solid #478915 medium;
+    padding:25px;
+    border-radius: 39px 39px 39px 39px;
+    box-shadow: 4px 6px 10px #333333;
+}
+.visualClear{
+    clear: both;
+}
+.splashinner img{
+    float: left;
+}
 /* =============================================================================
    Non-semantic helper classes
    Please define your styles before this section.
