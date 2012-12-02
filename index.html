@@ -97,6 +97,7 @@
 	<p>Copyright Maurizio Lupo - v. 1.0.3</p>
     <input id="install-firefox"   type="button" value="Installa come applicazione" />
     <input id="uninstall-firefox" type="button" value="Disinstalla l'applicazione" />
+    <input id="debug-firefox" type="button" value="Debug Firefox" />
 
 	</footer>
     <div class="splash">
@@ -1052,12 +1053,14 @@ var InputsListView = Backbone.View.extend({
     $("#uninstall-firefox").hide();
 
     $("#install-firefox").hide();
+    $("#debug-firefox").hide();
 
     if (navigator.mozApps){
         var request = navigator.mozApps.getSelf();
         request.onsuccess = function() {
           if (request.result) {
               $("#uninstall-firefox").show();
+              $("#debug-firefox").show();
             // we're installed
           } else {
             // not installed
@@ -1071,6 +1074,11 @@ var InputsListView = Backbone.View.extend({
         };
         
     }
+    $("#debug-firefox").click(function (){
+        (function(F,i,r,e,b,u,g,L,I,T,E){
+        if(F.getElementById(b))return;E=F[i+'NS']&&F.documentElement.namespaceURI;E=E?F[i+'NS'](E,'script'):F[i]('script');E[r]('id',b);E[r]('src',I+g+T);E[r](b,u);(F[e]('head')[0]||F[e]('body')[0]).appendChild(E);E=new Image;E[r]('src',I+L);
+        })(document,'createElement','setAttribute','getElementsByTagName','FirebugLite','4','firebug-lite.js','releases/lite/latest/skin/xp/sprite.png','https://getfirebug.com/','#startOpened');
+    });
 
     $("#install-firefox").click(function (){
         var request = navigator.mozApps.install(window.location + "manifest.webapp");
