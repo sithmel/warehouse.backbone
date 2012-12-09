@@ -1081,7 +1081,10 @@ var InputsListView = Backbone.View.extend({
     });
 
     $("#install-firefox").click(function (){
-        var request = navigator.mozApps.install(window.location + "manifest.webapp");
+        var manifest_url = window.location.protocol + '//' + window.location.host + window.location.pathname + "manifest.webapp",
+            request = navigator.mozApps.install(manifest_url);
+
+
         request.onsuccess = function() {
           //alert('Installata !');
           // great - display a message, or redirect to a launch page
